@@ -1,23 +1,52 @@
-import { supabase } from "@/lib/supabaseClient";
-import ProductCard from "@/components/ProductCard";
+'use client'
+    
+import { useEffect, useState } from 'react'
 
-export default async function HomePage() {
-  const { data: products, error } = await supabase.from("products").select("*");
-  console.log("products", products);
+export default function ProductsPage() {
+  const [products, setProducts] = useState([])
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products')
+        if (response.ok) {
+          const data = await response.json()
+          setProducts(data)
+        } else {
+          const errorData = await response.json()
+          setError(errorData.error)
+        }
+      } catch (err) {
+        setError('Failed to fetch products.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [])
+
+  if (loading) {
+    return <p>Loading...</p> // Fallback content
+  }
 
   if (error) {
-    console.error("Error fetching products:", error.message);
-    return <p className="text-red-500">Failed to load products.</p>;
+    return <p>Error: {error}</p>
+  }
+
+  if (products.length === 0) {
+    return <p>No products available.</p> // Empty state
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-6">Product List</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {products?.map((product) => (
-          <ProductCard key={product.id} product={product} />
+    <div>
+      <h1>Products</h1>
+      <ul>
+        {products.map((product) => (
+          <li key={product.id}>{product.name}</li>
         ))}
-      </div>
+      </ul>
     </div>
-  );
+  )
 }
